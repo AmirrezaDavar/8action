@@ -43,6 +43,8 @@ from diffusion_policy.common.pytorch_util import dict_apply
 from diffusion_policy.workspace.base_workspace import BaseWorkspace
 from diffusion_policy.policy.base_image_policy import BaseImagePolicy
 from diffusion_policy.common.cv2_util import get_image_transform
+from diffusion_policy.real_world.gripper_diff import GripperController
+
 
 
 OmegaConf.register_new_resolver("eval", eval, replace=True)
@@ -63,6 +65,11 @@ def main(input, output, robot_ip, match_dataset, match_episode,
     vis_camera_idx, init_joints, 
     steps_per_inference, max_duration,
     frequency, command_latency):
+
+    # Initialize GripperController
+    gripper = GripperController()
+    gripper.start_key_listener()
+
     # load match_dataset
     match_camera_idx = 0
     episode_first_frame_map = dict()
@@ -143,7 +150,8 @@ def main(input, output, robot_ip, match_dataset, match_episode,
     with SharedMemoryManager() as shm_manager:
         with Spacemouse(shm_manager=shm_manager) as sm, RealEnv(
             output_dir=output, 
-            robot_ip=robot_ip, 
+            robot_ip=robot_ip,
+            gripper=gripper, # Pass the gripper instance
             frequency=frequency,
             n_obs_steps=n_obs_steps,
             obs_image_resolution=obs_res,
@@ -181,6 +189,7 @@ def main(input, output, robot_ip, match_dataset, match_episode,
                 # assert action.shape[-1] == 6 #modified
                 assert action.shape[-1] == 8 #modified
                 del result
+            print(f'obs from eval', obs)
 
             print('Ready!')
             while True:

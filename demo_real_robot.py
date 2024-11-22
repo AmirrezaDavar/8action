@@ -79,140 +79,148 @@ def main(output, robot_ip, vis_camera_idx, init_joints, frequency, command_laten
             iter_idx = 0
             stop = False
             is_recording = False
-            while not stop:
-                # calculate timing
-                t_cycle_end = t_start + (iter_idx + 1) * dt
-                t_sample = t_cycle_end - command_latency
-                t_command_target = t_cycle_end + dt
 
-                # pump obs
-                obs = env.get_obs()
+            # not sure about this try and finally?
+            try:
+                while not stop:
 
-                # handle key presses
-                # this is where I am adding gripper control buttons # modified
-                press_events = key_counter.get_press_events()
-                for key_stroke in press_events:
-                    if key_stroke == KeyCode(char='q'):
-                        # Exit program
-                        stop = True
-                    elif key_stroke == KeyCode(char='c'):
-                        # Start recording
-                        env.start_episode(t_start + (iter_idx + 2) * dt - time.monotonic() + time.time())
-                        key_counter.clear()
-                        is_recording = True
-                        print('Recording!')
-                    elif key_stroke == KeyCode(char='s'):
-                        # Stop recording
-                        env.end_episode()
-                        key_counter.clear()
-                        is_recording = False
-                        print('Stopped.')
-                    elif key_stroke == Key.backspace:
-                        # Delete the most recent recorded episode
-                        if click.confirm('Are you sure to drop an episode?'):
-                            env.drop_episode()
+
+                    # calculate timing
+                    t_cycle_end = t_start + (iter_idx + 1) * dt
+                    t_sample = t_cycle_end - command_latency
+                    t_command_target = t_cycle_end + dt
+
+                    # pump obs
+                    obs = env.get_obs()
+
+                    # handle key presses
+                    # this is where I am adding gripper control buttons # modified
+                    press_events = key_counter.get_press_events()
+                    for key_stroke in press_events:
+                        if key_stroke == KeyCode(char='q'):
+                            # Exit program
+                            stop = True
+                        elif key_stroke == KeyCode(char='c'):
+                            # Start recording
+                            env.start_episode(t_start + (iter_idx + 2) * dt - time.monotonic() + time.time())
+                            key_counter.clear()
+                            is_recording = True
+                            print('Recording!')
+                        elif key_stroke == KeyCode(char='s'):
+                            # Stop recording
+                            env.end_episode()
                             key_counter.clear()
                             is_recording = False
-                        # delete
+                            print('Stopped.')
+                        elif key_stroke == Key.backspace:
+                            # Delete the most recent recorded episode
+                            if click.confirm('Are you sure to drop an episode?'):
+                                env.drop_episode()
+                                key_counter.clear()
+                                is_recording = False
+                            # delete
 
-                    # Gripper control based on specific key presses
-                    elif key_stroke == KeyCode(char='o'):
-                        gripper.on_press(KeyCode(char='o'))  # Open right jaw
-                    elif key_stroke == KeyCode(char='l'):
-                        gripper.on_press(KeyCode(char='l'))  # Close right jaw
-                    elif key_stroke == KeyCode(char='i'):
-                        gripper.on_press(KeyCode(char='i'))  # Open left jaw
-                    elif key_stroke == KeyCode(char='k'):
-                        gripper.on_press(KeyCode(char='k'))  # Close left jaw
+                        # Gripper control based on specific key presses
+                        elif key_stroke == KeyCode(char='o'):
+                            gripper.on_press(KeyCode(char='o'))  # Open right jaw
+                        elif key_stroke == KeyCode(char='l'):
+                            gripper.on_press(KeyCode(char='l'))  # Close right jaw
+                        elif key_stroke == KeyCode(char='i'):
+                            gripper.on_press(KeyCode(char='i'))  # Open left jaw
+                        elif key_stroke == KeyCode(char='k'):
+                            gripper.on_press(KeyCode(char='k'))  # Close left jaw
 
-                    # # Gripper control based on specific key presses
-                    # if key_stroke == KeyCode(char='o'):
-                    #     gripper.on_press(KeyCode(char='o'))  # Open right jaw
-                    # elif key_stroke == KeyCode(char='l'):
-                    #     gripper.on_press(KeyCode(char='l'))  # Close right jaw
-                    # elif key_stroke == KeyCode(char='i'):
-                    #     gripper.on_press(KeyCode(char='i'))  # Open left jaw
-                    # elif key_stroke == KeyCode(char='k'):
-                    #     gripper.on_press(KeyCode(char='k'))  # Close left jaw
+                        # # Gripper control based on specific key presses
+                        # if key_stroke == KeyCode(char='o'):
+                        #     gripper.on_press(KeyCode(char='o'))  # Open right jaw
+                        # elif key_stroke == KeyCode(char='l'):
+                        #     gripper.on_press(KeyCode(char='l'))  # Close right jaw
+                        # elif key_stroke == KeyCode(char='i'):
+                        #     gripper.on_press(KeyCode(char='i'))  # Open left jaw
+                        # elif key_stroke == KeyCode(char='k'):
+                        #     gripper.on_press(KeyCode(char='k'))  # Close left jaw
 
-                        
-                stage = key_counter[Key.space]
+                            
+                    stage = key_counter[Key.space]
 
-                # visualize
-                vis_img = obs[f'camera_{vis_camera_idx}'][-1,:,:,::-1].copy()
-                episode_id = env.replay_buffer.n_episodes
-                text = f'Episode: {episode_id}, Stage: {stage}'
-                if is_recording:
-                    text += ', Recording!'
-                cv2.putText(
-                    vis_img,
-                    text,
-                    (10,30),
-                    fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-                    fontScale=1,
-                    thickness=2,
-                    color=(255,255,255)
-                )
+                    # visualize
+                    vis_img = obs[f'camera_{vis_camera_idx}'][-1,:,:,::-1].copy()
+                    episode_id = env.replay_buffer.n_episodes
+                    text = f'Episode: {episode_id}, Stage: {stage}'
+                    if is_recording:
+                        text += ', Recording!'
+                    cv2.putText(
+                        vis_img,
+                        text,
+                        (10,30),
+                        fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                        fontScale=1,
+                        thickness=2,
+                        color=(255,255,255)
+                    )
 
-                cv2.imshow('default', vis_img)
-                cv2.pollKey()
+                    cv2.imshow('default', vis_img)
+                    cv2.pollKey()
 
-                precise_wait(t_sample)
-                # get teleop command
-                sm_state = sm.get_motion_state_transformed()
-                # print(sm_state)
-                dpos = sm_state[:3] * (env.max_pos_speed / frequency)
-                drot_xyz = sm_state[3:] * (env.max_rot_speed / frequency)
-                
-                # uncomment this code to bring back the condition for button chekcs # modified
-                if not sm.is_button_pressed(0):
-                    # translation mode
-                    drot_xyz[:] = 0
-                else:
-                    dpos[:] = 0
-                if not sm.is_button_pressed(1):
-                    # 2D translation mode
-                    dpos[2] = 0    
-
-                drot = st.Rotation.from_euler('xyz', drot_xyz)
-                target_pose[:3] += dpos
-                target_pose[3:] = (drot * st.Rotation.from_rotvec(
-                    target_pose[3:])).as_rotvec()
-                
-                # # Assuming `left_jaw` and `right_jaw` are available as single values or scalars.
-                # left_jaw = 1  # Replace with the actual left_jaw value
-                # right_jaw = 1  # Replace with the actual right_jaw value
-
-                
-
-                # Add left_jaw and right_jaw to the target_pose to form the complete action array
-                # target_action = np.append(target_pose, [left_jaw, right_jaw])
-
-                # Get the current robot state, which includes left_jaw and right_jaw data
-                # robot_obs = env.get_robot_state()
-                # print(f'&&&&&&& robot obs from demo &&&&&&&', robot_obs)
-
-                # # Execute actions, passing robot_obs to include gripper states
-                # target_action = np.append(target_pose, [gripper.left_jaw_state, gripper.right_jaw_state])
-
-                # Get the current gripper states directly from the GripperController
-                left_jaw_state, right_jaw_state = gripper.get_states()
-                target_action = np.append(target_pose, [left_jaw_state, right_jaw_state])
-
-                # execute teleop command
-                # I can try here as well##############################################################
-                # Execute teleop command, passing robot_obs to include gripper states
-                env.exec_actions(
-                    # actions=[target_pose],
-                    actions=[target_action],
-                    timestamps=[t_command_target - time.monotonic() + time.time()],
-                    stages=[stage],
-                    # robot_obs=robot_obs  # Pass robot_obs here
-                )
-                
+                    precise_wait(t_sample)
+                    # get teleop command
+                    sm_state = sm.get_motion_state_transformed()
+                    # print(sm_state)
+                    dpos = sm_state[:3] * (env.max_pos_speed / frequency)
+                    drot_xyz = sm_state[3:] * (env.max_rot_speed / frequency)
                     
-                precise_wait(t_cycle_end)
-                iter_idx += 1
+                    # uncomment this code to bring back the condition for button chekcs # modified
+                    if not sm.is_button_pressed(0):
+                        # translation mode
+                        drot_xyz[:] = 0
+                    else:
+                        dpos[:] = 0
+                    if not sm.is_button_pressed(1):
+                        # 2D translation mode
+                        dpos[2] = 0    
+
+                    drot = st.Rotation.from_euler('xyz', drot_xyz)
+                    target_pose[:3] += dpos
+                    target_pose[3:] = (drot * st.Rotation.from_rotvec(
+                        target_pose[3:])).as_rotvec()
+                    
+                    # # Assuming `left_jaw` and `right_jaw` are available as single values or scalars.
+                    # left_jaw = 1  # Replace with the actual left_jaw value
+                    # right_jaw = 1  # Replace with the actual right_jaw value
+
+                    
+
+                    # Add left_jaw and right_jaw to the target_pose to form the complete action array
+                    # target_action = np.append(target_pose, [left_jaw, right_jaw])
+
+                    # Get the current robot state, which includes left_jaw and right_jaw data
+                    # robot_obs = env.get_robot_state()
+                    # print(f'&&&&&&& robot obs from demo &&&&&&&', robot_obs)
+
+                    # # Execute actions, passing robot_obs to include gripper states
+                    # target_action = np.append(target_pose, [gripper.left_jaw_state, gripper.right_jaw_state])
+
+                    # Get the current gripper states directly from the GripperController
+                    left_jaw_state, right_jaw_state = gripper.get_states()
+                    target_action = np.append(target_pose, [left_jaw_state, right_jaw_state])
+
+                    # execute teleop command
+                    # I can try here as well##############################################################
+                    # Execute teleop command, passing robot_obs to include gripper states
+                    env.exec_actions(
+                        # actions=[target_pose],
+                        actions=[target_action],
+                        timestamps=[t_command_target - time.monotonic() + time.time()],
+                        stages=[stage],
+                        # robot_obs=robot_obs  # Pass robot_obs here
+                    )
+                    
+                        
+                    precise_wait(t_cycle_end)
+                    iter_idx += 1
+
+            finally:
+                gripper.close()
 
 # %%
 if __name__ == '__main__':
