@@ -74,7 +74,7 @@ class RealEnv:
         zarr_path = str(output_dir.joinpath('replay_buffer.zarr').absolute())
         replay_buffer = ReplayBuffer.create_from_path(
             zarr_path=zarr_path, mode='a')
-        # print(f'#######from real_env#######',replay_buffer)
+        print(f'#######from real_env#######',replay_buffer)
         # this is exeteremly good news that the gripper information is now here. 
         # the only thing is that it sould be added to something that I need to figure out. 
         # also the action here should be 8 not 6
@@ -340,7 +340,7 @@ class RealEnv:
         obs_data = dict(camera_obs)
         obs_data.update(robot_obs)
         obs_data['timestamp'] = obs_align_timestamps
-        # print(f'##############obs_data###############',obs_data)
+        # print(f'############## obs_data from real_env ###############',obs_data)
         return obs_data
     
 
@@ -348,8 +348,8 @@ class RealEnv:
     def exec_actions(self, 
                     actions: np.ndarray, 
                     timestamps: np.ndarray, 
-                    stages: Optional[np.ndarray] = None, 
-                    robot_obs: dict = None):  # Pass robot_obs as a parameter
+                    stages: Optional[np.ndarray] = None):
+                    # robot_obs: dict = None):  # Pass robot_obs as a parameter
         # Print the incoming actions to check shape
         # print("######## actions in the begining in real_env ########", actions)
         
@@ -364,14 +364,14 @@ class RealEnv:
             stages = np.array(stages, dtype=np.int64)
 
 
-        # Retrieve left_jaw and right_jaw values from robot_obs
-        if robot_obs is not None:
-            left_jaw = robot_obs.get('left_jaw', [[1.00]])[-1][0]  # Default to 1 if not found
-            right_jaw = robot_obs.get('right_jaw', [[1.00]])[-1][0]
-            gripper_states = np.array([[left_jaw, right_jaw]] * actions.shape[0])
+        # # Retrieve left_jaw and right_jaw values from robot_obs
+        # if robot_obs is not None:
+        #     left_jaw = robot_obs.get('left_jaw', [[1.00]])[-1][0]  # Default to 1 if not found
+        #     right_jaw = robot_obs.get('right_jaw', [[1.00]])[-1][0]
+        #     gripper_states = np.array([[left_jaw, right_jaw]] * actions.shape[0])
             
-            # Append left_jaw and right_jaw to each action to form the complete 8-dimensional action array
-            actions = np.hstack((actions, gripper_states))
+        #     # Append left_jaw and right_jaw to each action to form the complete 8-dimensional action array
+        #     actions = np.hstack((actions, gripper_states))
 
         # Print to confirm the updated action shape (should be 8 now)
         # print("######## Updated actions in real_env ########", actions)
@@ -394,7 +394,9 @@ class RealEnv:
                 
                 target_time=new_timestamps[i]
             )
-        # print("######## new actions ########", new_actions)
+        print("######## new actions ########", new_actions)
+
+
         # Record actions if accumulator is active
         if self.action_accumulator is not None:
             self.action_accumulator.put(

@@ -189,21 +189,25 @@ def main(output, robot_ip, vis_camera_idx, init_joints, frequency, command_laten
                 # target_action = np.append(target_pose, [left_jaw, right_jaw])
 
                 # Get the current robot state, which includes left_jaw and right_jaw data
-                robot_obs = env.get_robot_state()
+                # robot_obs = env.get_robot_state()
                 # print(f'&&&&&&& robot obs from demo &&&&&&&', robot_obs)
 
-                # Execute actions, passing robot_obs to include gripper states
-                target_action = np.append(target_pose, [gripper.left_jaw_state, gripper.right_jaw_state])
+                # # Execute actions, passing robot_obs to include gripper states
+                # target_action = np.append(target_pose, [gripper.left_jaw_state, gripper.right_jaw_state])
 
+                # Get the current gripper states directly from the GripperController
+                left_jaw_state, right_jaw_state = gripper.get_states()
+                target_action = np.append(target_pose, [left_jaw_state, right_jaw_state])
 
                 # execute teleop command
                 # I can try here as well##############################################################
                 # Execute teleop command, passing robot_obs to include gripper states
                 env.exec_actions(
-                    actions=[target_pose],
+                    # actions=[target_pose],
+                    actions=[target_action],
                     timestamps=[t_command_target - time.monotonic() + time.time()],
                     stages=[stage],
-                    robot_obs=robot_obs  # Pass robot_obs here
+                    # robot_obs=robot_obs  # Pass robot_obs here
                 )
                 
                     

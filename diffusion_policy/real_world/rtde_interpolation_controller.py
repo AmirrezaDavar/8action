@@ -338,10 +338,10 @@ class RTDEInterpolationController(mp.Process):
                 # Fetch real-time gripper states
                 # Fetch real-time gripper states from the shared variables
                 left_jaw_state, right_jaw_state = self.gripper.get_states()
-                print(f"Updating State -> Left: {left_jaw_state}, Right: {right_jaw_state}")  # Debug Print
+                # print(f"Updating State -> Left: {left_jaw_state}, Right: {right_jaw_state}")  # Debug Print
                 state['LeftJawState'] = np.array([left_jaw_state])
                 state['RightJawState'] = np.array([right_jaw_state])
-                print(f"###### Updated State ###### {state}")  # Debug Print
+                # print(f"###### Updated State ###### {state}")  # Debug Print
 
                 ############################################################################################################################################
 

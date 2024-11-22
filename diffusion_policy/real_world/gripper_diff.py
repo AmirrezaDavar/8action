@@ -166,7 +166,7 @@ class GripperController:
         log_entry = f"Timestamp: {timestamp}, Left_Jaw_State: {left_state}, Right_Jaw_State: {right_state}, Action: {action}\n"
         with open(self.log_file, "a") as file:
             file.write(log_entry)
-        print(f"Gripper Log -> {log_entry.strip()}")  # Debug Print
+        # print(f"Gripper Log -> {log_entry.strip()}")  # Debug Print
 
     def on_press(self, key):
         try:
@@ -208,7 +208,7 @@ class GripperController:
         with self.left_jaw_state.get_lock(), self.right_jaw_state.get_lock():
             left = self.left_jaw_state.value
             right = self.right_jaw_state.value
-            print(f"Fetching Gripper States -> Left: {left}, Right: {right}")  # Debug Print
+            # print(f"Fetching Gripper States -> Left: {left}, Right: {right}")  # Debug Print
             return left, right
 
     def close(self):
