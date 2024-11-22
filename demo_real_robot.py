@@ -22,6 +22,7 @@ import click
 import cv2
 import numpy as np
 import scipy.spatial.transform as st
+from diffusion_policy.real_world.rtde_interpolation_controller import RTDEInterpolationController ####1
 from diffusion_policy.real_world.gripper_diff import GripperController
 from diffusion_policy.real_world.real_env import RealEnv
 from diffusion_policy.real_world.spacemouse_shared_memory import Spacemouse
@@ -39,7 +40,11 @@ from diffusion_policy.real_world.keystroke_counter import (
 @click.option('--command_latency', '-cl', default=0.01, type=float, help="Latency between receiving SapceMouse command to executing on Robot in Sec.")
 def main(output, robot_ip, vis_camera_idx, init_joints, frequency, command_latency):
     dt = 1/frequency
+
     gripper = GripperController()  # Initialize the GripperController
+    gripper.start_key_listener()   # Start the keyboard listener
+
+    
     with SharedMemoryManager() as shm_manager:
         with KeystrokeCounter() as key_counter, \
             Spacemouse(shm_manager=shm_manager) as sm, \
@@ -57,6 +62,7 @@ def main(output, robot_ip, vis_camera_idx, init_joints, frequency, command_laten
                 # video recording quality, lower is better (but slower).
                 video_crf=21,
                 shm_manager=shm_manager,
+                gripper=gripper, # Pass the gripper instance
             ) as env:
             cv2.setNumThreads(1)
 
@@ -184,7 +190,7 @@ def main(output, robot_ip, vis_camera_idx, init_joints, frequency, command_laten
 
                 # Get the current robot state, which includes left_jaw and right_jaw data
                 robot_obs = env.get_robot_state()
-                print(f'&&&&&&& robot obs from demo &&&&&&&', robot_obs)
+                # print(f'&&&&&&& robot obs from demo &&&&&&&', robot_obs)
 
                 # Execute actions, passing robot_obs to include gripper states
                 target_action = np.append(target_pose, [gripper.left_jaw_state, gripper.right_jaw_state])

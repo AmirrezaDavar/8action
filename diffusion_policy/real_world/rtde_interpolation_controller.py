@@ -1,5 +1,3 @@
-
-
 import os
 import time
 import enum
@@ -16,10 +14,14 @@ from diffusion_policy.shared_memory.shared_memory_ring_buffer import SharedMemor
 from diffusion_policy.common.pose_trajectory_interpolator import PoseTrajectoryInterpolator
 from diffusion_policy.real_world.gripper_diff import GripperController # added1
 
+############################################################################################################################################
+
 class Command(enum.Enum):
     STOP = 0
     SERVOL = 1
     SCHEDULE_WAYPOINT = 2
+
+############################################################################################################################################
 
 
 class RTDEInterpolationController(mp.Process):
@@ -31,7 +33,8 @@ class RTDEInterpolationController(mp.Process):
 
     def __init__(self,
             shm_manager: SharedMemoryManager, 
-            robot_ip, 
+            robot_ip,
+            gripper, ###########1#########
             frequency=125, 
             lookahead_time=0.1, 
             gain=300,
@@ -61,6 +64,8 @@ class RTDEInterpolationController(mp.Process):
             requires running scripts/rtprio_setup.sh before hand.
 
         """
+############################################################################################################################################
+
         # verify
         assert 0 < frequency <= 500
         assert 0.03 <= lookahead_time <= 0.2
@@ -80,8 +85,11 @@ class RTDEInterpolationController(mp.Process):
             joints_init = np.array(joints_init)
             assert joints_init.shape == (6,)
 
+############################################################################################################################################
+
         super().__init__(name="RTDEPositionalController")
         self.robot_ip = robot_ip
+        self.gripper = gripper ###########1#########
         self.frequency = frequency
         self.lookahead_time = lookahead_time
         self.gain = gain
@@ -96,6 +104,8 @@ class RTDEInterpolationController(mp.Process):
         self.soft_real_time = soft_real_time
         self.verbose = verbose
 
+############################################################################################################################################
+
         # build input queue
         example = {
             'cmd': Command.SERVOL.value,
@@ -109,6 +119,8 @@ class RTDEInterpolationController(mp.Process):
             examples=example,
             buffer_size=256
         )
+
+############################################################################################################################################
 
         # build ring buffer
         if receive_keys is None:
@@ -132,11 +144,14 @@ class RTDEInterpolationController(mp.Process):
             example[key] = np.array(getattr(rtde_r, 'get'+key)())
         example['robot_receive_timestamp'] = time.time()
 
-        # Manually add gripper status keys with default values
-        # I want these values to be updated each time I open and close each jaw
-        # I feel like i should seperate robot data and gripper data in receive_keys
-        example['LeftJawState'] = np.array([1.00000000])  # Assuming 1 is the default open state # added4
-        example['RightJawState'] = np.array([1.00000000])  # Assuming 1 is the default open state # added5
+############################################################################################################################################ gripper data here 1
+
+        # Define default values for gripper states for ring buffer initialization.
+        # These values will be updated dynamically during runtime.
+        example['LeftJawState'] = np.array([1.00000000])  # Default open state
+        example['RightJawState'] = np.array([1.00000000])  # Default open state
+
+############################################################################################################################################
 
 
         ring_buffer = SharedMemoryRingBuffer.create_from_examples(
@@ -151,6 +166,8 @@ class RTDEInterpolationController(mp.Process):
         self.input_queue = input_queue
         self.ring_buffer = ring_buffer
         self.receive_keys = receive_keys
+
+############################################################################################################################################
     
     # ========= launch method ===========
     def start(self, wait=True):
@@ -178,6 +195,8 @@ class RTDEInterpolationController(mp.Process):
     @property
     def is_ready(self):
         return self.ready_event.is_set()
+    
+############################################################################################################################################
 
     # ========= context manager ===========
     def __enter__(self):
@@ -186,6 +205,8 @@ class RTDEInterpolationController(mp.Process):
     
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.stop()
+
+############################################################################################################################################
         
     # ========= command methods ============
     def servoL(self, pose, duration=0.1):
@@ -220,6 +241,8 @@ class RTDEInterpolationController(mp.Process):
         }
         self.input_queue.put(message)
 
+############################################################################################################################################
+
     # ========= receive APIs =============
     def get_state(self, k=None, out=None):
         if k is None:
@@ -229,6 +252,8 @@ class RTDEInterpolationController(mp.Process):
     
     def get_all_state(self):
         return self.ring_buffer.get_all()
+    
+############################################################################################################################################
     
     # ========= main loop in process ============
     def run(self):
@@ -270,12 +295,11 @@ class RTDEInterpolationController(mp.Process):
                 poses=[curr_pose]
             )
             
+############################################################################################################################################ gripper 2
 
-            gripper = GripperController() # added6
+            # gripper = GripperController() # added6
 
-            # gripper.left_jaw_state = 1
-            # gripper.right_jaw_state = 1
-
+############################################################################################################################################
 
             iter_idx = 0
             keep_running = True
@@ -306,10 +330,22 @@ class RTDEInterpolationController(mp.Process):
                     state[key] = np.array(getattr(rtde_r, 'get'+key)())
                 state['robot_receive_timestamp'] = time.time()
 
-                # Add gripper status to state by accessing GripperController attributes
-                state['LeftJawState'] = np.array([gripper.left_jaw_state]) # added7
-                state['RightJawState'] = np.array([gripper.right_jaw_state]) # added8
+                ############################################################################################################################################ gripper 3
 
+                # Add gripper status to state by accessing GripperController attributes
+                # state['LeftJawState'] = np.array([gripper.left_jaw_state]) # added7
+                # state['RightJawState'] = np.array([gripper.right_jaw_state]) # added8
+                # Fetch real-time gripper states
+                # Fetch real-time gripper states from the shared variables
+                left_jaw_state, right_jaw_state = self.gripper.get_states()
+                print(f"Updating State -> Left: {left_jaw_state}, Right: {right_jaw_state}")  # Debug Print
+                state['LeftJawState'] = np.array([left_jaw_state])
+                state['RightJawState'] = np.array([right_jaw_state])
+                print(f"###### Updated State ###### {state}")  # Debug Print
+
+                ############################################################################################################################################
+
+                # Store state in the ring buffer
                 self.ring_buffer.put(state)
 
                 # fetch command from queue

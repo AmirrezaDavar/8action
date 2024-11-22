@@ -37,6 +37,7 @@ class RealEnv:
             # required params
             output_dir,
             robot_ip,
+            gripper,
             # env params
             frequency=10,
             n_obs_steps=2,
@@ -73,7 +74,7 @@ class RealEnv:
         zarr_path = str(output_dir.joinpath('replay_buffer.zarr').absolute())
         replay_buffer = ReplayBuffer.create_from_path(
             zarr_path=zarr_path, mode='a')
-        print(f'#######from real_env#######',replay_buffer)
+        # print(f'#######from real_env#######',replay_buffer)
         # this is exeteremly good news that the gripper information is now here. 
         # the only thing is that it sould be added to something that I need to figure out. 
         # also the action here should be 8 not 6
@@ -176,6 +177,7 @@ class RealEnv:
         robot = RTDEInterpolationController(
             shm_manager=shm_manager,
             robot_ip=robot_ip,
+            gripper=gripper,
             frequency=125, # UR5 CB3 RTDE
             lookahead_time=0.1,
             gain=300,
@@ -212,6 +214,16 @@ class RealEnv:
         self.obs_accumulator = None
         self.action_accumulator = None
         self.stage_accumulator = None
+
+        self.gripper = gripper  # Store the gripper instance
+
+        # Initialize RTDEInterpolationController with gripper
+        self.controller = RTDEInterpolationController(
+            shm_manager=shm_manager,
+            robot_ip=robot_ip,
+            gripper=self.gripper,  # Pass the gripper instance
+            # ... other parameters ...
+            )
 
         self.start_time = None
     
@@ -339,7 +351,7 @@ class RealEnv:
                     stages: Optional[np.ndarray] = None, 
                     robot_obs: dict = None):  # Pass robot_obs as a parameter
         # Print the incoming actions to check shape
-        print("######## actions in the begining in real_env ########", actions)
+        # print("######## actions in the begining in real_env ########", actions)
         
         assert self.is_ready
         if not isinstance(actions, np.ndarray):
@@ -382,7 +394,7 @@ class RealEnv:
                 
                 target_time=new_timestamps[i]
             )
-        print("######## new actions ########", new_actions)
+        # print("######## new actions ########", new_actions)
         # Record actions if accumulator is active
         if self.action_accumulator is not None:
             self.action_accumulator.put(
