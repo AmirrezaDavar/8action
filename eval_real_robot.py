@@ -189,7 +189,7 @@ def main(input, output, robot_ip, match_dataset, match_episode,
                 # assert action.shape[-1] == 6 #modified
                 assert action.shape[-1] == 8 #modified
                 del result
-            print(f'obs from eval', obs)
+            # print(f'obs from eval', obs)
 
             print('Ready!')
             while True:
@@ -207,6 +207,8 @@ def main(input, output, robot_ip, match_dataset, match_episode,
 
                     # pump obs
                     obs = env.get_obs()
+
+                    # print(obs)
 
                     # visualize
                     episode_id = env.replay_buffer.n_episodes
@@ -245,6 +247,20 @@ def main(input, output, robot_ip, match_dataset, match_episode,
                         # Exit human control loop
                         # hand control over to the policy
                         break
+                    elif key_stroke == ord('o'):
+                        gripper.on_press('o')  # Open right jaw
+                    elif key_stroke == ord('l'):
+                        gripper.on_press('l')  # Close right jaw
+                    elif key_stroke == ord('i'):
+                        gripper.on_press('i')  # Open left jaw
+                    elif key_stroke == ord('k'):
+                        gripper.on_press('k')  # Close left jaw
+
+
+
+
+
+
 
                     precise_wait(t_sample)
                     # get teleop command
@@ -283,12 +299,26 @@ def main(input, output, robot_ip, match_dataset, match_episode,
                     #     [1.14, 0.50, 0.12, np.pi, np.pi/2, np.pi]       # upper bounds for xyz, rpy
                     # )
 
+
+################################################################################################################################################
+                    # # Get the current gripper states directly from the GripperController
+                    # left_jaw_state, right_jaw_state = gripper.get_states()
+
+                    # # Append left_jaw_state and right_jaw_state to the target_pose
+                    # target_action = np.append(target_pose, [left_jaw_state, right_jaw_state])
+
+
+################################################################################################################################################
+
+
                     # execute teleop command
                     env.exec_actions(
-                        actions=[target_pose], 
+                        actions=[target_pose],
+                        # actions=[target_action], 
                         timestamps=[t_command_target-time.monotonic()+time.time()])
                     precise_wait(t_cycle_end)
                     iter_idx += 1
+                    
                 
                 # ========== policy control loop ==============
                 try:
@@ -311,7 +341,7 @@ def main(input, output, robot_ip, match_dataset, match_episode,
                         t_cycle_end = t_start + (iter_idx + steps_per_inference) * dt
 
                         # get obs
-                        print('get_obs')
+                        # print('get_obs')
                         obs = env.get_obs()
                         obs_timestamps = obs['timestamp']
                         print(f'Obs latency {time.time() - obs_timestamps[-1]}')
@@ -381,6 +411,20 @@ def main(input, output, robot_ip, match_dataset, match_episode,
 
                             # Assign the full 8-dimensional action
                             this_target_poses[:, [0, 1, 2, 3, 4, 5, 6, 7]] = action  # Assign action's 8 elements
+
+                        # # convert policy action to env actions
+                        # if delta_action:
+                        #     assert len(action) == 1
+                        #     if perv_target_pose is None:
+                        #         perv_target_pose = obs['robot_eef_pose'][-1]
+                        #     this_target_pose = perv_target_pose.copy()
+                        #     this_target_pose[[0,1,2,3,4,5,6,7]] += action[-1]
+                        #     perv_target_pose = this_target_pose
+                        #     this_target_poses = np.expand_dims(this_target_pose, axis=0)
+                        # else:
+                        #     this_target_poses = np.zeros((len(action), len(target_pose)), dtype=np.float64)
+                        #     this_target_poses[:] = target_pose
+                        #     this_target_poses[:,[0,1,2,3,4,5,6,7]] = action
 
 
 

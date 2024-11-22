@@ -139,7 +139,7 @@ class GripperController:
         # Set up serial communication with Arduino
         try:
             self.ser = serial.Serial(self.port, self.baudrate)
-            time.sleep(2)  # Give some time for the connection to establish
+            time.sleep(0.01)  # Give some time for the connection to establish
             print("Serial connection established.")
         except serial.SerialException:
             print("Error: Could not connect to Arduino.")
@@ -168,29 +168,109 @@ class GripperController:
             file.write(log_entry)
         # print(f"Gripper Log -> {log_entry.strip()}")  # Debug Print
 
-    def on_press(self, key):
+    # def on_press(self, key):
+    #     try:
+    #         if key.char == 'o':
+    #             if self.ser:
+    #                 self.ser.write(b'open_right_request\n')
+    #                 self.ser.flush()
+    #             self.update_state(right=1, action="open_right")
+    #         elif key.char == 'l':
+    #             if self.ser:
+    #                 self.ser.write(b'close_right_request\n')
+    #                 self.ser.flush()
+    #             self.update_state(right=0, action="close_right")
+    #         elif key.char == 'i':
+    #             if self.ser:
+    #                 self.ser.write(b'open_left_request\n')
+    #                 self.ser.flush()
+    #             self.update_state(left=1, action="open_left")
+    #         elif key.char == 'k':
+    #             if self.ser:
+    #                 self.ser.write(b'close_left_request\n')
+    #                 self.ser.flush()
+    #             self.update_state(left=0, action="close_left")
+    #     except AttributeError:
+    #         pass  # Do nothing if AttributeError occurs
+
+    # def on_press(self, key):
+    #     """
+    #     Adjusted to accept either a pynput KeyCode object or a single character.
+    #     """
+    #     try:
+    #         # Check if key is a character (from cv2.pollKey())
+    #         if isinstance(key, str):
+    #             char = key
+    #         elif hasattr(key, 'char'):
+    #             char = key.char
+    #         else:
+    #             char = ''
+            
+    #         if char == 'o':
+    #             if self.ser:
+    #                 self.ser.write(b'open_right_request\n')
+    #                 self.ser.flush()
+    #             self.update_state(right=1, action="open_right")
+    #         elif char == 'l':
+    #             if self.ser:
+    #                 self.ser.write(b'close_right_request\n')
+    #                 self.ser.flush()
+    #             self.update_state(right=0, action="close_right")
+    #         elif char == 'i':
+    #             if self.ser:
+    #                 self.ser.write(b'open_left_request\n')
+    #                 self.ser.flush()
+    #             self.update_state(left=1, action="open_left")
+    #         elif char == 'k':
+    #             if self.ser:
+    #                 self.ser.write(b'close_left_request\n')
+    #                 self.ser.flush()
+    #             self.update_state(left=0, action="close_left")
+    #     except AttributeError:
+    #         pass  # Do nothing if AttributeError occurs
+
+    def on_press(self, key_char):
+        """
+        Adjusted to accept a single character representing the key press.
+        """
         try:
-            if key.char == 'o':
+            char = key_char  # key_char is already a character
+
+            # Debug statement to verify key press
+            print(f"on_press called with key_char: '{char}'")
+
+            if char == 'o':
                 if self.ser:
+                    print("Sending command: open_right_request")
                     self.ser.write(b'open_right_request\n')
                     self.ser.flush()
+                    print("Command sent: open_right_request")
                 self.update_state(right=1, action="open_right")
-            elif key.char == 'l':
+            elif char == 'l':
                 if self.ser:
+                    print("Sending command: close_right_request")
                     self.ser.write(b'close_right_request\n')
                     self.ser.flush()
+                    print("Command sent: close_right_request")
                 self.update_state(right=0, action="close_right")
-            elif key.char == 'i':
+            elif char == 'i':
                 if self.ser:
+                    print("Sending command: open_left_request")
                     self.ser.write(b'open_left_request\n')
                     self.ser.flush()
+                    print("Command sent: open_left_request")
                 self.update_state(left=1, action="open_left")
-            elif key.char == 'k':
+            elif char == 'k':
                 if self.ser:
+                    print("Sending command: close_left_request")
                     self.ser.write(b'close_left_request\n')
                     self.ser.flush()
+                    print("Command sent: close_left_request")
                 self.update_state(left=0, action="close_left")
-        except AttributeError:
+            else:
+                print(f"No action assigned for key: '{char}'")
+        except AttributeError as e:
+            print(f"AttributeError in on_press: {e}")
             pass  # Do nothing if AttributeError occurs
 
     def on_release(self, key):
@@ -199,9 +279,10 @@ class GripperController:
             return False
 
     def start_key_listener(self):
-        # Start listening for keypresses in a separate thread
-        self.listener = keyboard.Listener(on_press=self.on_press, on_release=self.on_release)
-        self.listener.start()  # Start in a non-blocking way
+        # # Start listening for keypresses in a separate thread
+        # self.listener = keyboard.Listener(on_press=self.on_press, on_release=self.on_release)
+        # self.listener.start()  # Start in a non-blocking way
+        pass
 
     def get_states(self):
         """Return the current jaw states safely."""
@@ -215,6 +296,6 @@ class GripperController:
         # Close the serial connection when done
         if self.ser:
             self.ser.close()
-        self.listener.stop()
+        # self.listener.stop()
 
 # No need for the 'if __name__ == "__main__"' block since we instantiate GripperController in the main script

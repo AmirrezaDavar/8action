@@ -74,7 +74,7 @@ class RealEnv:
         zarr_path = str(output_dir.joinpath('replay_buffer.zarr').absolute())
         replay_buffer = ReplayBuffer.create_from_path(
             zarr_path=zarr_path, mode='a')
-        print(f'#######from real_env#######',replay_buffer)
+        # print(f'#######from real_env#######',replay_buffer)
         # this is exeteremly good news that the gripper information is now here. 
         # the only thing is that it sould be added to something that I need to figure out. 
         # also the action here should be 8 not 6
@@ -390,11 +390,12 @@ class RealEnv:
         for i in range(len(new_actions)):
             self.robot.schedule_waypoint(
                 # pose=new_actions[i],
-                pose=new_actions[i][:6],  # Pass only the first 6 elements to the robot
-                
+                # pose=new_actions[i][:6],  # Pass only the first 6 elements to the robot
+                pose=new_actions[i][:8],
+
                 target_time=new_timestamps[i]
             )
-        print("######## new actions ########", new_actions)
+        print("######## new actions from real_env ########", new_actions)
 
 
         # Record actions if accumulator is active

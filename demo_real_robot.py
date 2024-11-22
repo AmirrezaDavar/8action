@@ -42,7 +42,7 @@ def main(output, robot_ip, vis_camera_idx, init_joints, frequency, command_laten
     dt = 1/frequency
 
     gripper = GripperController()  # Initialize the GripperController
-    gripper.start_key_listener()   # Start the keyboard listener
+    # gripper.start_key_listener()   # Start the keyboard listener
 
     
     with SharedMemoryManager() as shm_manager:
@@ -120,15 +120,25 @@ def main(output, robot_ip, vis_camera_idx, init_joints, frequency, command_laten
                                 is_recording = False
                             # delete
 
+                        # # Gripper control based on specific key presses
+                        # elif key_stroke == KeyCode(char='o'):
+                        #     gripper.on_press(KeyCode(char='o'))  # Open right jaw
+                        # elif key_stroke == KeyCode(char='l'):
+                        #     gripper.on_press(KeyCode(char='l'))  # Close right jaw
+                        # elif key_stroke == KeyCode(char='i'):
+                        #     gripper.on_press(KeyCode(char='i'))  # Open left jaw
+                        # elif key_stroke == KeyCode(char='k'):
+                        #     gripper.on_press(KeyCode(char='k'))  # Close left jaw
+
                         # Gripper control based on specific key presses
                         elif key_stroke == KeyCode(char='o'):
-                            gripper.on_press(KeyCode(char='o'))  # Open right jaw
+                            gripper.on_press('o')  # Open right jaw
                         elif key_stroke == KeyCode(char='l'):
-                            gripper.on_press(KeyCode(char='l'))  # Close right jaw
+                            gripper.on_press('l')  # Close right jaw
                         elif key_stroke == KeyCode(char='i'):
-                            gripper.on_press(KeyCode(char='i'))  # Open left jaw
+                            gripper.on_press('i')  # Open left jaw
                         elif key_stroke == KeyCode(char='k'):
-                            gripper.on_press(KeyCode(char='k'))  # Close left jaw
+                            gripper.on_press('k')  # Close left jaw
 
                         # # Gripper control based on specific key presses
                         # if key_stroke == KeyCode(char='o'):
