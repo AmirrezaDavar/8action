@@ -74,7 +74,7 @@ class RealEnv:
         zarr_path = str(output_dir.joinpath('replay_buffer.zarr').absolute())
         replay_buffer = ReplayBuffer.create_from_path(
             zarr_path=zarr_path, mode='a')
-        # print(f'#######from real_env#######',replay_buffer)
+        print(f'####### replay buffer from real_env #######',replay_buffer)
         # this is exeteremly good news that the gripper information is now here. 
         # the only thing is that it sould be added to something that I need to figure out. 
         # also the action here should be 8 not 6
@@ -395,7 +395,7 @@ class RealEnv:
 
                 target_time=new_timestamps[i]
             )
-        print("######## new actions from real_env ########", new_actions)
+        # print("######## new actions from real_env ########", new_actions)
 
 
         # Record actions if accumulator is active

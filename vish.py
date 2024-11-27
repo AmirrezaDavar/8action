@@ -3,7 +3,7 @@ import numpy as np
 import os
 
 # Define the path to your Zarr store
-store_path = '/home/wanglab/1_REF_ws/origin_git3_push6DOF/pushZ-master/data/demo_pusht_real/replay_buffer.zarr'
+store_path = 'replay_buffer.zarr'
 store = zarr.DirectoryStore(store_path)
 root = zarr.open(store)
 
@@ -11,7 +11,7 @@ root = zarr.open(store)
 datasets = ['left_jaw', 'right_jaw', 'robot_eef_pose', 'robot_joint', 'action']
 
 # Define the output directory (pushZ-master)
-output_dir = '/home/wanglab/1_REF_ws/origin_git3_push6DOF/pushZ-master'
+output_dir = '/home/wanglab/1_REF_ws/git_1_action8/8action'
 
 # Ensure the output directory exists
 if not os.path.exists(output_dir):
