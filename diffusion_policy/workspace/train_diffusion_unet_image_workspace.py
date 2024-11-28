@@ -166,6 +166,8 @@ class TrainDiffusionUnetImageWorkspace(BaseWorkspace):
                         if train_sampling_batch is None:
                             train_sampling_batch = batch
 
+                        print(f'batch from training', batch)
+
                         # compute loss
                         raw_loss = self.model.compute_loss(batch)
                         loss = raw_loss / cfg.training.gradient_accumulate_every

@@ -75,14 +75,14 @@ ema:
 
 dataloader:
   batch_size: 3 # modified
-  num_workers: 8
+  num_workers: 3
   shuffle: True
   pin_memory: True
   persistent_workers: True
 
 val_dataloader:
   batch_size: 3 # modified
-  num_workers: 8
+  num_workers: 3
   shuffle: False
   pin_memory: True
   persistent_workers: True

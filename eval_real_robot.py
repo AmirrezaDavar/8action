@@ -307,14 +307,18 @@ def main(input, output, robot_ip, match_dataset, match_episode,
                     # # Append left_jaw_state and right_jaw_state to the target_pose
                     # target_action = np.append(target_pose, [left_jaw_state, right_jaw_state])
 
+                    # Get the current gripper states directly from the GripperController
+                    left_jaw_state, right_jaw_state = gripper.get_states()
+                    target_action = np.append(target_pose, [left_jaw_state, right_jaw_state])
+
 
 ################################################################################################################################################
 
 
                     # execute teleop command
                     env.exec_actions(
-                        actions=[target_pose],
-                        # actions=[target_action], 
+                        # actions=[target_pose],
+                        actions=[target_action], 
                         timestamps=[t_command_target-time.monotonic()+time.time()])
                     precise_wait(t_cycle_end)
                     iter_idx += 1
