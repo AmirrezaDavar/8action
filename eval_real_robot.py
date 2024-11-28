@@ -416,6 +416,13 @@ def main(input, output, robot_ip, match_dataset, match_episode,
                             # Assign the full 8-dimensional action
                             this_target_poses[:, [0, 1, 2, 3, 4, 5, 6, 7]] = action  # Assign action's 8 elements
 
+                        ###########################################################################################
+
+                        # Extract gripper commands
+                        gripper_commands = this_target_poses[:, 6:8]
+
+                        ###########################################################################################
+
                         # # convert policy action to env actions
                         # if delta_action:
                         #     assert len(action) == 1
@@ -472,12 +479,39 @@ def main(input, output, robot_ip, match_dataset, match_episode,
                         #     [0.44, -0.30, 0.05, -np.pi, -np.pi/2, -np.pi],  # lower bounds for xyz, rpy
                         #     [1.14, 0.50, 0.12, np.pi, np.pi/2, np.pi]       # upper bounds for xyz, rpy
 
-                        # execute actions
+###########################################################################################
+
+
+                        # # execute actions
+                        # env.exec_actions(
+                        #     actions=this_target_poses,
+                        #     timestamps=action_timestamps
+                        # )
+                        # print(f"Submitted {len(this_target_poses)} steps of actions.")
+
+                        # execute robot actions (first 6 elements)
                         env.exec_actions(
-                            actions=this_target_poses,
+                            actions=this_target_poses[:, :6],
                             timestamps=action_timestamps
                         )
                         print(f"Submitted {len(this_target_poses)} steps of actions.")
+                        
+                        # Send gripper commands
+                        for gripper_command in gripper_commands:
+                            left_jaw_state, right_jaw_state = gripper_command
+                            gripper.set_state(int(left_jaw_state), int(right_jaw_state))
+
+
+
+
+
+
+###########################################################################################
+
+
+
+
+
 
                         # visualize
                         episode_id = env.replay_buffer.n_episodes
