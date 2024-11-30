@@ -187,6 +187,13 @@ def main(input, output, robot_ip, match_dataset, match_episode,
                 action = result['action'][0].detach().to('cpu').numpy()
                 # assert action.shape[-1] == 2
                 # assert action.shape[-1] == 6 #modified
+
+                # Clamp the last two dimensions (gripper commands) to [0, 1]
+                action[:, 6:8] = np.clip(action[:, 6:8], 0, 1)
+
+                # Debug policy output
+                print(f"Raw Gripper Output from Policy: {action[:, 6:8]}")
+
                 assert action.shape[-1] == 8 #modified
                 del result
             # print(f'obs from eval', obs)
@@ -421,6 +428,9 @@ def main(input, output, robot_ip, match_dataset, match_episode,
                         # Extract gripper commands
                         gripper_commands = this_target_poses[:, 6:8]
 
+                        # Clamp or discretize the commands to binary states
+                        binary_gripper_commands = np.round(gripper_commands).astype(int)
+
                         ###########################################################################################
 
                         # # convert policy action to env actions
@@ -497,8 +507,12 @@ def main(input, output, robot_ip, match_dataset, match_episode,
                         print(f"Submitted {len(this_target_poses)} steps of actions.")
                         
                         # Send gripper commands
-                        for gripper_command in gripper_commands:
+                        for gripper_command in binary_gripper_commands:
                             left_jaw_state, right_jaw_state = gripper_command
+                            gripper.set_state(int(left_jaw_state), int(right_jaw_state))
+                            print(f"Gripper Command Sent: Left Jaw = {left_jaw_state}, Right Jaw = {right_jaw_state}")
+
+                            # Send the commands to the gripper
                             gripper.set_state(int(left_jaw_state), int(right_jaw_state))
 
 
