@@ -188,13 +188,20 @@ def main(input, output, robot_ip, match_dataset, match_episode,
                 # assert action.shape[-1] == 2
                 # assert action.shape[-1] == 6 #modified
 
-                # Clamp the last two dimensions (gripper commands) to [0, 1]
-                action[:, 6:8] = np.clip(action[:, 6:8], 0, 1)
+                # # Clamp the last two dimensions (gripper commands) to [0, 1]
+                # action[:, 6:8] = np.clip(action[:, 6:8], 0, 1)
 
-                # Debug policy output
-                print(f"Raw Gripper Output from Policy: {action[:, 6:8]}")
+                print(f"Raw Policy Output: {result['action']}")
+
+                # # # Debug policy output
+                # # print(f"Raw Gripper Output from Policy: {action[:, 6:8]}")
+
+                # action[:, 6:8] = np.round(action[:, 6:8])
+
 
                 assert action.shape[-1] == 8 #modified
+                print("AAAAAAAAAAAAAAAAAAAA action shape AAAAAAAAAAAAAAAAAAAAAA:", action.shape)
+
                 del result
             # print(f'obs from eval', obs)
 
@@ -413,23 +420,44 @@ def main(input, output, robot_ip, match_dataset, match_episode,
                             this_target_poses = np.expand_dims(this_target_pose, axis=0)
 
                         else:
-                            # Initialize `this_target_poses` to hold 8D actions for each action in `action`
-                            this_target_poses = np.zeros((len(action), 8), dtype=np.float64)
+                            # # Initialize `this_target_poses` to hold 8D actions for each action in `action`
+                            # this_target_poses = np.zeros((len(action), 8), dtype=np.float64)
                             
-                            # Fill the first 6 dimensions with the robot's target pose and last 2 with default gripper states
-                            this_target_poses[:, :6] = target_pose
-                            this_target_poses[:, 6:] = [1, 1]  # Default gripper states, adjust as needed
+                            # # Fill the first 6 dimensions with the robot's target pose and last 2 with default gripper states
+                            # this_target_poses[:, :6] = target_pose
+                            # this_target_poses[:, 6:] = [1, 1]  # Default gripper states, adjust as needed
 
-                            # Assign the full 8-dimensional action
-                            this_target_poses[:, [0, 1, 2, 3, 4, 5, 6, 7]] = action  # Assign action's 8 elements
+                            # # Assign the full 8-dimensional action
+                            # this_target_poses[:, [0, 1, 2, 3, 4, 5, 6, 7]] = action  # Assign action's 8 elements
+
+                            # this_target_poses = action[np.newaxis, ...] # make it (1,8)
+                            this_target_poses = action
+
+                        # print(f"Final Actions Sent to Robot (Step {iter_idx}): {this_target_poses}")
+                        # Debug raw predicted actions
+                        print(f"Raw Predicted Actions (Gripper): {this_target_poses[:, 6:8]}")
+
 
                         ###########################################################################################
 
                         # Extract gripper commands
-                        gripper_commands = this_target_poses[:, 6:8]
+                        # gripper_commands = this_target_poses[:, 6:8]
 
                         # Clamp or discretize the commands to binary states
-                        binary_gripper_commands = np.round(gripper_commands).astype(int)
+                        # binary_gripper_commands = np.round(gripper_commands).astype(int)
+                        # Clamp or discretize the commands to binary states
+
+
+                        # binary_gripper_commands = np.clip(np.round(this_target_poses[:, 6:8]), 0, 1)
+
+                        # Print gripper commands being sent
+                        # print(f"Gripper Commands Sent (Binary): {binary_gripper_commands}")
+
+                        # If you need to ensure binary gripper states, round them here:
+                        # (This depends on how you recorded the demonstrations.
+                        # If your demos always had exactly 0 or 1 for the gripper, do this:)
+                        this_target_poses[:, 6:8] = np.round(this_target_poses[:, 6:8]).clip(0, 1)
+
 
                         ###########################################################################################
 
@@ -501,19 +529,29 @@ def main(input, output, robot_ip, match_dataset, match_episode,
 
                         # execute robot actions (first 6 elements)
                         env.exec_actions(
-                            actions=this_target_poses[:, :6],
+                            # actions=this_target_poses[:, :6],
+                            actions=this_target_poses,
                             timestamps=action_timestamps
                         )
                         print(f"Submitted {len(this_target_poses)} steps of actions.")
-                        
-                        # Send gripper commands
-                        for gripper_command in binary_gripper_commands:
-                            left_jaw_state, right_jaw_state = gripper_command
-                            gripper.set_state(int(left_jaw_state), int(right_jaw_state))
-                            print(f"Gripper Command Sent: Left Jaw = {left_jaw_state}, Right Jaw = {right_jaw_state}")
+                        print(f"Final Actions Sent to Robot (including Gripper):\n{this_target_poses}")
 
-                            # Send the commands to the gripper
-                            gripper.set_state(int(left_jaw_state), int(right_jaw_state))
+
+                        # after env.exec_actions():
+                        for action_step in this_target_poses:
+                            left_jaw = int(round(action_step[6]))
+                            right_jaw = int(round(action_step[7]))
+                            gripper.set_state(left_jaw, right_jaw)
+                        # Send gripper commands
+                        # Send gripper commands
+                        # print(f"Gripper Commands to be Sent (Binary States): {binary_gripper_commands}")
+                        # for gripper_command in binary_gripper_commands:
+                        #     left_jaw_state, right_jaw_state = gripper_command
+                        #     gripper.set_state(int(left_jaw_state), int(right_jaw_state))
+                        #     # print(f"Gripper Command Sent: Left Jaw = {left_jaw_state}, Right Jaw = {right_jaw_state}")
+
+                        #     # Send the commands to the gripper
+                        #     gripper.set_state(int(left_jaw_state), int(right_jaw_state))
 
 
 

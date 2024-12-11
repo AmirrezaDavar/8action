@@ -163,10 +163,13 @@ class TrainDiffusionUnetImageWorkspace(BaseWorkspace):
                     for batch_idx, batch in enumerate(tepoch):
                         # device transfer
                         batch = dict_apply(batch, lambda x: x.to(device, non_blocking=True))
+
+                        print(f"Ground truth actions (batch): {batch['action']}")
+
                         if train_sampling_batch is None:
                             train_sampling_batch = batch
 
-                        print(f'batch from training', batch)
+                        # print(f'batch from training', batch)
 
                         # compute loss
                         raw_loss = self.model.compute_loss(batch)
@@ -249,6 +252,9 @@ class TrainDiffusionUnetImageWorkspace(BaseWorkspace):
                         gt_action = batch['action']
                         
                         result = policy.predict_action(obs_dict)
+
+                        print(f"Predicted actions: {result['action_pred']}")
+
                         pred_action = result['action_pred']
                         mse = torch.nn.functional.mse_loss(pred_action, gt_action)
                         step_log['train_action_mse_error'] = mse.item()

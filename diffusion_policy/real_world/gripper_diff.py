@@ -261,6 +261,13 @@ class GripperController:
             self.ser = serial.Serial(self.port, self.baudrate)
             time.sleep(0.01)  # Give some time for the connection to establish
             print("Serial connection established.")
+
+            # Force the gripper to open both jaws to match our initial assumption.
+            self.send_command('open_left_request')
+            self.update_state(left=1, action="forced_open_left")
+            self.send_command('open_right_request')
+            self.update_state(right=1, action="forced_open_right")
+
         except serial.SerialException:
             print("Error: Could not connect to Arduino.")
             self.ser = None  # Prevent errors if serial is not connected
@@ -323,14 +330,41 @@ class GripperController:
             self.ser.flush()
             print(f"Command sent: {command}")
 
+    # def set_state(self, left_jaw_state, right_jaw_state):
+    #     """Set the gripper state directly."""
+    #     # Convert states to int if they are float
+    #     left_jaw_state = int(left_jaw_state)
+    #     right_jaw_state = int(right_jaw_state)
+
+    #     # Update left jaw
+    #     if left_jaw_state != self.left_jaw_state.value:
+    #         if left_jaw_state == 1:
+    #             self.send_command('open_left_request')
+    #             self.update_state(left=1, action="open_left")
+    #         else:
+    #             self.send_command('close_left_request')
+    #             self.update_state(left=0, action="close_left")
+
+    #     # Update right jaw
+    #     if right_jaw_state != self.right_jaw_state.value:
+    #         if right_jaw_state == 1:
+    #             self.send_command('open_right_request')
+    #             self.update_state(right=1, action="open_right")
+    #         else:
+    #             self.send_command('close_right_request')
+    #             self.update_state(right=0, action="close_right")
+
     def set_state(self, left_jaw_state, right_jaw_state):
-        """Set the gripper state directly."""
-        # Convert states to int if they are float
+        """Set the gripper state directly, sending commands only if the state changes."""
         left_jaw_state = int(left_jaw_state)
         right_jaw_state = int(right_jaw_state)
 
-        # Update left jaw
+        # Flags to check if any state changes
+        changed = False
+
+        # Update left jaw if needed
         if left_jaw_state != self.left_jaw_state.value:
+            changed = True
             if left_jaw_state == 1:
                 self.send_command('open_left_request')
                 self.update_state(left=1, action="open_left")
@@ -338,14 +372,19 @@ class GripperController:
                 self.send_command('close_left_request')
                 self.update_state(left=0, action="close_left")
 
-        # Update right jaw
+        # Update right jaw if needed
         if right_jaw_state != self.right_jaw_state.value:
+            changed = True
             if right_jaw_state == 1:
                 self.send_command('open_right_request')
                 self.update_state(right=1, action="open_right")
             else:
                 self.send_command('close_right_request')
                 self.update_state(right=0, action="close_right")
+
+        # If no change, just log the current state (optional)
+        if not changed:
+            self.log_gripper_status("no_change_maintain_state")
 
     def on_release(self, key):
         # Exit program on 'q'

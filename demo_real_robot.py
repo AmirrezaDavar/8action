@@ -214,6 +214,13 @@ def main(output, robot_ip, vis_camera_idx, init_joints, frequency, command_laten
                     left_jaw_state, right_jaw_state = gripper.get_states()
                     target_action = np.append(target_pose, [left_jaw_state, right_jaw_state])
 
+################################################### final data for printing and confirming ####################################################################
+                    # Print the final actions that will be executed and stored
+                    # print(f"## Executing action from demo_real_robot ##: {target_action}")
+
+#########################################################################################################################################################
+
+
                     # execute teleop command
                     # I can try here as well##############################################################
                     # Execute teleop command, passing robot_obs to include gripper states

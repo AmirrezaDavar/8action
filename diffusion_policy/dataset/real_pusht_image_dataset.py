@@ -170,9 +170,55 @@ class RealPushTImageDataset(BaseImageDataset):
     def get_normalizer(self, **kwargs) -> LinearNormalizer:
         normalizer = LinearNormalizer()
 
+
+        ####################################################################
+
+        # # Separate robot actions and gripper actions
+        # robot_action = self.replay_buffer['action'][:, :6]  # First six dimensions
+        # gripper_action = self.replay_buffer['action'][:, 6:]  # Last two dimensions
+
+        # # Apply normalization only to robot actions
+        # normalizer['action_robot'] = SingleFieldLinearNormalizer.create_fit(robot_action)
+
+        # # Do not normalize gripper actions; leave them as-is
+        # normalizer['action_gripper'] = SingleFieldLinearNormalizer()  # Identity normalization
+
+        # # Normalize robot actions
+        # normalized_robot_action = normalizer['action_robot'].normalize(robot_action)
+
+        # # Combine normalized robot actions with unmodified gripper actions
+        # self.replay_buffer['action'][:, :6] = normalized_robot_action  # Update robot actions
+        # self.replay_buffer['action'][:, 6:] = gripper_action  # Gripper actions remain unchanged
+
+
+        # # Extract the actions
+        # actions = self.replay_buffer['action']
+
+        # # Split into robot and gripper actions
+        # robot_action = actions[:, :6]  # First six dimensions
+        # gripper_action = actions[:, 6:]  # Last two dimensions
+
+        # # Apply normalization only to the robot actions
+        # normalized_robot_action = SingleFieldLinearNormalizer.create_fit(robot_action).normalize(robot_action)
+
+        # # Combine normalized robot actions with unchanged gripper actions
+        # actions[:, :6] = normalized_robot_action  # Update normalized robot actions
+        # actions[:, 6:] = gripper_action  # Leave gripper actions unchanged
+
+        # # Create the normalizer for the entire action array (with partial normalization)
+        # normalizer['action'] = SingleFieldLinearNormalizer.create_fit(actions)
+
+
+        # print("Normalized Robot Actions:", actions[:, :6])
+        # print("Unchanged Gripper Actions:", actions[:, 6:])
+
+
+
         # action - this should be 2 as well?
         normalizer['action'] = SingleFieldLinearNormalizer.create_fit(
             self.replay_buffer['action'])
+
+        ####################################################################
 
         # obs - this should be 2? b/c only x, y
         for key in self.lowdim_keys:
