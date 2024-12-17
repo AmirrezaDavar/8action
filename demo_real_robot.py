@@ -120,15 +120,6 @@ def main(output, robot_ip, vis_camera_idx, init_joints, frequency, command_laten
                                 is_recording = False
                             # delete
 
-                        # # Gripper control based on specific key presses
-                        # elif key_stroke == KeyCode(char='o'):
-                        #     gripper.on_press(KeyCode(char='o'))  # Open right jaw
-                        # elif key_stroke == KeyCode(char='l'):
-                        #     gripper.on_press(KeyCode(char='l'))  # Close right jaw
-                        # elif key_stroke == KeyCode(char='i'):
-                        #     gripper.on_press(KeyCode(char='i'))  # Open left jaw
-                        # elif key_stroke == KeyCode(char='k'):
-                        #     gripper.on_press(KeyCode(char='k'))  # Close left jaw
 
                         # Gripper control based on specific key presses
                         elif key_stroke == KeyCode(char='o'):
@@ -139,18 +130,7 @@ def main(output, robot_ip, vis_camera_idx, init_joints, frequency, command_laten
                             gripper.on_press('i')  # Open left jaw
                         elif key_stroke == KeyCode(char='k'):
                             gripper.on_press('k')  # Close left jaw
-
-                        # # Gripper control based on specific key presses
-                        # if key_stroke == KeyCode(char='o'):
-                        #     gripper.on_press(KeyCode(char='o'))  # Open right jaw
-                        # elif key_stroke == KeyCode(char='l'):
-                        #     gripper.on_press(KeyCode(char='l'))  # Close right jaw
-                        # elif key_stroke == KeyCode(char='i'):
-                        #     gripper.on_press(KeyCode(char='i'))  # Open left jaw
-                        # elif key_stroke == KeyCode(char='k'):
-                        #     gripper.on_press(KeyCode(char='k'))  # Close left jaw
-
-                            
+ 
                     stage = key_counter[Key.space]
 
                     # visualize
@@ -193,36 +173,12 @@ def main(output, robot_ip, vis_camera_idx, init_joints, frequency, command_laten
                     target_pose[:3] += dpos
                     target_pose[3:] = (drot * st.Rotation.from_rotvec(
                         target_pose[3:])).as_rotvec()
-                    
-                    # # Assuming `left_jaw` and `right_jaw` are available as single values or scalars.
-                    # left_jaw = 1  # Replace with the actual left_jaw value
-                    # right_jaw = 1  # Replace with the actual right_jaw value
-
-                    
-
-                    # Add left_jaw and right_jaw to the target_pose to form the complete action array
-                    # target_action = np.append(target_pose, [left_jaw, right_jaw])
-
-                    # Get the current robot state, which includes left_jaw and right_jaw data
-                    # robot_obs = env.get_robot_state()
-                    # print(f'&&&&&&& robot obs from demo &&&&&&&', robot_obs)
-
-                    # # Execute actions, passing robot_obs to include gripper states
-                    # target_action = np.append(target_pose, [gripper.left_jaw_state, gripper.right_jaw_state])
 
                     # Get the current gripper states directly from the GripperController
                     left_jaw_state, right_jaw_state = gripper.get_states()
                     target_action = np.append(target_pose, [left_jaw_state, right_jaw_state])
 
-################################################### final data for printing and confirming ####################################################################
-                    # Print the final actions that will be executed and stored
-                    # print(f"## Executing action from demo_real_robot ##: {target_action}")
-
-#########################################################################################################################################################
-
-
                     # execute teleop command
-                    # I can try here as well##############################################################
                     # Execute teleop command, passing robot_obs to include gripper states
                     env.exec_actions(
                         # actions=[target_pose],

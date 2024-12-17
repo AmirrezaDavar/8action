@@ -52,13 +52,13 @@ OmegaConf.register_new_resolver("eval", eval, replace=True)
 @click.command()
 @click.option('--input', '-i', required=True, help='Path to checkpoint')
 @click.option('--output', '-o', required=True, help='Directory to save recording')
-@click.option('--robot_ip', '-ri', required=True, help="UR5's IP address e.g. 192.168.0.204")
+@click.option('--robot_ip', '-ri', required=True, help="UR10e's IP address e.g. 192.168.0.204")
 @click.option('--match_dataset', '-m', default=None, help='Dataset used to overlay and adjust initial condition')
 @click.option('--match_episode', '-me', default=None, type=int, help='Match specific episode from the match dataset')
 @click.option('--vis_camera_idx', default=0, type=int, help="Which RealSense camera to visualize.")
 @click.option('--init_joints', '-j', is_flag=True, default=False, help="Whether to initialize robot joint configuration in the beginning.")
 @click.option('--steps_per_inference', '-si', default=6, type=int, help="Action horizon for inference.")
-@click.option('--max_duration', '-md', default=60, help='Max duration for each epoch in seconds.')
+@click.option('--max_duration', '-md', default=120, help='Max duration for each epoch in seconds. Initially, it was 60s.')
 @click.option('--frequency', '-f', default=10, type=float, help="Control frequency in Hz.")
 @click.option('--command_latency', '-cl', default=0.01, type=float, help="Latency between receiving SapceMouse command to executing on Robot in Sec.")
 def main(input, output, robot_ip, match_dataset, match_episode,
@@ -271,11 +271,6 @@ def main(input, output, robot_ip, match_dataset, match_episode,
                         gripper.on_press('k')  # Close left jaw
 
 
-
-
-
-
-
                     precise_wait(t_sample)
                     # get teleop command
                     sm_state = sm.get_motion_state_transformed()
@@ -297,37 +292,15 @@ def main(input, output, robot_ip, match_dataset, match_episode,
                     target_pose[3:] = (drot * st.Rotation.from_rotvec(
                         target_pose[3:])).as_rotvec()
                     # clip target pose
-                    # increase [0.25, -0.80], [this one, 0.80]) - 0.50 -> i have to increase this
-                    # -0.30 is right, 0.50 is left
-                    # 0.05 as close as it can get to the table z
-                    # 1.0 how high it can go
-                    # 0.10 right and 0.20 is from left
-                    # -0.95 getting close to wall
-                    # target_pose[:3] = np.clip(target_pose[:3], [-x left, - y close to wall, z from table], [x right, - y to robot, z away from table])
                     target_pose[:3] = np.clip(target_pose[:3], [-0.50, -0.90, 0.07], [0.52, -0.42, 0.70])
 
-                    # # clip target_pose for 6 DOF (xyz, roll, pitch, yaw) # modified
-                    # target_pose = np.clip(
-                    #     target_pose, 
-                    #     [0.44, -0.30, 0.05, -np.pi, -np.pi/2, -np.pi],  # lower bounds for xyz, rpy
-                    #     [1.14, 0.50, 0.12, np.pi, np.pi/2, np.pi]       # upper bounds for xyz, rpy
-                    # )
-
-
 ################################################################################################################################################
-                    # # Get the current gripper states directly from the GripperController
-                    # left_jaw_state, right_jaw_state = gripper.get_states()
-
-                    # # Append left_jaw_state and right_jaw_state to the target_pose
-                    # target_action = np.append(target_pose, [left_jaw_state, right_jaw_state])
 
                     # Get the current gripper states directly from the GripperController
                     left_jaw_state, right_jaw_state = gripper.get_states()
                     target_action = np.append(target_pose, [left_jaw_state, right_jaw_state])
 
-
 ################################################################################################################################################
-
 
                     # execute teleop command
                     env.exec_actions(
@@ -337,6 +310,9 @@ def main(input, output, robot_ip, match_dataset, match_episode,
                     precise_wait(t_cycle_end)
                     iter_idx += 1
                     
+                
+                # Initialize a list to store the values of this_target_poses
+                all_target_poses = [] 
                 
                 # ========== policy control loop ==============
                 try:
@@ -376,29 +352,6 @@ def main(input, output, robot_ip, match_dataset, match_episode,
                             action = result['action'][0].detach().to('cpu').numpy()
                             print('Inference latency:', time.time() - s)
                         
-                        # # convert policy action to env actions
-                        # if delta_action:
-                        #     assert len(action) == 1 # code expects action to contain exactly one action in this context
-                        #     if perv_target_pose is None:
-                        #         perv_target_pose = obs['robot_eef_pose'][-1]
-                        #     this_target_pose = perv_target_pose.copy()
-                        #     # this_target_pose[[0,1]] += action[-1]
-                        #     # this_target_pose[[0,1,2,3,4,5]] += action[-1] # modified
-                        #     this_target_pose[[0,1,2,3,4,5,6,7]] += action[-1] # modified
-                        #     perv_target_pose = this_target_pose
-                        #     this_target_poses = np.expand_dims(this_target_pose, axis=0)
-                        # else:
-                        #     this_target_poses = np.zeros((len(action), len(target_pose)), dtype=np.float64)
-                        #     this_target_poses[:] = target_pose
-                        #     # this_target_poses[:,[0,1]] = action 
-                        #     # this_target_poses[:,[0,1,2,3,4,5]] = action # modified
-                        #     this_target_poses[:,[0,1,2,3,4,5,6,7]] = action # modified
-
-
-
-
-
-                        
 
                         # convert policy action to env actions
                         if delta_action:
@@ -420,73 +373,20 @@ def main(input, output, robot_ip, match_dataset, match_episode,
                             this_target_poses = np.expand_dims(this_target_pose, axis=0)
 
                         else:
-                            # # Initialize `this_target_poses` to hold 8D actions for each action in `action`
-                            # this_target_poses = np.zeros((len(action), 8), dtype=np.float64)
-                            
-                            # # Fill the first 6 dimensions with the robot's target pose and last 2 with default gripper states
-                            # this_target_poses[:, :6] = target_pose
-                            # this_target_poses[:, 6:] = [1, 1]  # Default gripper states, adjust as needed
-
-                            # # Assign the full 8-dimensional action
-                            # this_target_poses[:, [0, 1, 2, 3, 4, 5, 6, 7]] = action  # Assign action's 8 elements
-
-                            # this_target_poses = action[np.newaxis, ...] # make it (1,8)
                             this_target_poses = action
 
-                        # print(f"Final Actions Sent to Robot (Step {iter_idx}): {this_target_poses}")
+                            # Append the current poses to the list
+                            all_target_poses.append(this_target_poses.copy())
+
                         # Debug raw predicted actions
                         print(f"Raw Predicted Actions (Gripper): {this_target_poses[:, 6:8]}")
 
 
                         ###########################################################################################
 
-                        # Extract gripper commands
-                        # gripper_commands = this_target_poses[:, 6:8]
-
-                        # Clamp or discretize the commands to binary states
-                        # binary_gripper_commands = np.round(gripper_commands).astype(int)
-                        # Clamp or discretize the commands to binary states
-
-
-                        # binary_gripper_commands = np.clip(np.round(this_target_poses[:, 6:8]), 0, 1)
-
-                        # Print gripper commands being sent
-                        # print(f"Gripper Commands Sent (Binary): {binary_gripper_commands}")
-
-                        # If you need to ensure binary gripper states, round them here:
-                        # (This depends on how you recorded the demonstrations.
-                        # If your demos always had exactly 0 or 1 for the gripper, do this:)
                         this_target_poses[:, 6:8] = np.round(this_target_poses[:, 6:8]).clip(0, 1)
 
-
                         ###########################################################################################
-
-                        # # convert policy action to env actions
-                        # if delta_action:
-                        #     assert len(action) == 1
-                        #     if perv_target_pose is None:
-                        #         perv_target_pose = obs['robot_eef_pose'][-1]
-                        #     this_target_pose = perv_target_pose.copy()
-                        #     this_target_pose[[0,1,2,3,4,5,6,7]] += action[-1]
-                        #     perv_target_pose = this_target_pose
-                        #     this_target_poses = np.expand_dims(this_target_pose, axis=0)
-                        # else:
-                        #     this_target_poses = np.zeros((len(action), len(target_pose)), dtype=np.float64)
-                        #     this_target_poses[:] = target_pose
-                        #     this_target_poses[:,[0,1,2,3,4,5,6,7]] = action
-
-
-
-
-
-
-
-
-
-
-
-
-
 
                         # deal with timing
                         # the same step actions are always the target for
@@ -511,21 +411,7 @@ def main(input, output, robot_ip, match_dataset, match_episode,
                         this_target_poses[:,:3] = np.clip(
                             this_target_poses[:,:3], [-0.50, -0.90, 0.07], [0.52, -0.42, 0.70])
 
-                        # # clip actions for 6 DOF (xyz, roll, pitch, yaw) # modified
-                        # this_target_poses = np.clip(
-                        #     this_target_poses, 
-                        #     [0.44, -0.30, 0.05, -np.pi, -np.pi/2, -np.pi],  # lower bounds for xyz, rpy
-                        #     [1.14, 0.50, 0.12, np.pi, np.pi/2, np.pi]       # upper bounds for xyz, rpy
-
 ###########################################################################################
-
-
-                        # # execute actions
-                        # env.exec_actions(
-                        #     actions=this_target_poses,
-                        #     timestamps=action_timestamps
-                        # )
-                        # print(f"Submitted {len(this_target_poses)} steps of actions.")
 
                         # execute robot actions (first 6 elements)
                         env.exec_actions(
@@ -536,34 +422,13 @@ def main(input, output, robot_ip, match_dataset, match_episode,
                         print(f"Submitted {len(this_target_poses)} steps of actions.")
                         print(f"Final Actions Sent to Robot (including Gripper):\n{this_target_poses}")
 
-
                         # after env.exec_actions():
                         for action_step in this_target_poses:
                             left_jaw = int(round(action_step[6]))
                             right_jaw = int(round(action_step[7]))
                             gripper.set_state(left_jaw, right_jaw)
-                        # Send gripper commands
-                        # Send gripper commands
-                        # print(f"Gripper Commands to be Sent (Binary States): {binary_gripper_commands}")
-                        # for gripper_command in binary_gripper_commands:
-                        #     left_jaw_state, right_jaw_state = gripper_command
-                        #     gripper.set_state(int(left_jaw_state), int(right_jaw_state))
-                        #     # print(f"Gripper Command Sent: Left Jaw = {left_jaw_state}, Right Jaw = {right_jaw_state}")
-
-                        #     # Send the commands to the gripper
-                        #     gripper.set_state(int(left_jaw_state), int(right_jaw_state))
-
-
-
-
-
 
 ###########################################################################################
-
-
-
-
-
 
                         # visualize
                         episode_id = env.replay_buffer.n_episodes
@@ -631,6 +496,11 @@ def main(input, output, robot_ip, match_dataset, match_episode,
                 
                 print("Stopped.")
 
+                # After the end of the evaluation loop, save all_target_poses to a file
+                with open("target_poses_log.txt", "w") as f:
+                    for step_poses in all_target_poses:
+                        for pose in step_poses:
+                            f.write(" ".join(map(str, pose)) + "\n")
 
 
 # %%

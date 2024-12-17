@@ -81,14 +81,6 @@ class RealEnv:
         # so once I modified the code I should see that the action is 8 instead of 6.
         # I only need to change the code in real_env and other places will be fixed dynamically. 
         ######################################################################
-        #################################################
-        ###################################
-        ############################
-        #####################
-        ###########
-        ######
-        ###
-        #
 
         if shm_manager is None:
             shm_manager = SharedMemoryManager()
@@ -362,29 +354,13 @@ class RealEnv:
             stages = np.zeros_like(timestamps, dtype=np.int64)
         elif not isinstance(stages, np.ndarray):
             stages = np.array(stages, dtype=np.int64)
-
-
-        # # Retrieve left_jaw and right_jaw values from robot_obs
-        # if robot_obs is not None:
-        #     left_jaw = robot_obs.get('left_jaw', [[1.00]])[-1][0]  # Default to 1 if not found
-        #     right_jaw = robot_obs.get('right_jaw', [[1.00]])[-1][0]
-        #     gripper_states = np.array([[left_jaw, right_jaw]] * actions.shape[0])
-            
-        #     # Append left_jaw and right_jaw to each action to form the complete 8-dimensional action array
-        #     actions = np.hstack((actions, gripper_states))
-
-        # Print to confirm the updated action shape (should be 8 now)
-        # print("######## Updated actions in real_env ########", actions)
         
-
         # Proceed with the rest of exec_actions logic
         receive_time = time.time()
         is_new = timestamps > receive_time
         new_actions = actions[is_new]
         new_timestamps = timestamps[is_new]
         new_stages = stages[is_new]
-
-        
 
         # Schedule waypoints
         for i in range(len(new_actions)):
