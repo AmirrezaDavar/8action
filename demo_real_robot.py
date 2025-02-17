@@ -77,6 +77,7 @@ def main(output, robot_ip, vis_camera_idx, init_joints, frequency, command_laten
             target_pose = state['TargetTCPPose']
             t_start = time.monotonic()
             iter_idx = 0
+            # stop = False
             stop = False
             is_recording = False
 
@@ -92,6 +93,9 @@ def main(output, robot_ip, vis_camera_idx, init_joints, frequency, command_laten
 
                     # pump obs
                     obs = env.get_obs()
+                    # print(obs["robot_eef_pose"])
+                    print("Robot 6DOF Pose (robot_eef_pose):", obs['robot_eef_pose'])
+                    # print("Robot 6DOF Pose (robot_eef_pose):", obs['left_jaw'])
 
                     # handle key presses
                     # this is where I am adding gripper control buttons # modified
@@ -112,6 +116,61 @@ def main(output, robot_ip, vis_camera_idx, init_joints, frequency, command_laten
                             key_counter.clear()
                             is_recording = False
                             print('Stopped.')
+
+                            # # ---------------------------------------------------
+                            # # HARD-CODED PHASE (Step 2) after teleoperation
+                            # # ---------------------------------------------------
+                            # print("Now moving to hard-coded position...")
+
+                            # waypoints_with_gripper = [
+                            #     (np.array([-0.1500000, -0.7400000, 0.09000000, 0.0450000, 3.1300000, 0.0490000]), None),
+                            #     (np.array([-0.1500000, -0.7400000, 0.3500000, -0.0000001, -2.1960000, 2.1310000]), None),
+                            #     (np.array([-0.1500000, -0.7400000, 0.6250000, -0.0000001, -2.1960000, 2.1310000]), None), # very close to shackle 
+                            #     (np.array([-0.1500000, -0.9400000, 0.60565556, -0.0000001, -2.1960000, 2.1310000]), "open"),  # Open gripper
+                            #     (np.array([-0.1500000, -0.72657112, 0.60565556, -0.0000001, -2.1960000, 2.1310000]), None),
+                            #     (np.array([-0.1500000, -0.7400000, 0.0900000, 0.0450000, 3.1300000, 0.0490000]), None),
+                            # ]
+
+                            # # Iterate over waypoints and execute each movement
+                            # for i, (waypoint_6d, gripper_action) in enumerate(waypoints_with_gripper):
+                            #     print(f"Moving to waypoint {i+1}/{len(waypoints_with_gripper)}: {waypoint_6d}")
+                            #     move_timestamp = time.time() + 0.1
+                            #     env.exec_actions([waypoint_6d], [move_timestamp], stages=[0])
+                                
+                            #     print(f"Waiting for robot to reach waypoint {i+1}...")
+                            #     time.sleep(5.0)
+
+                            #     # If there's a gripper action, execute it
+                            #     if gripper_action == "open":
+                            #         print("Opening both jaws...")
+                            #         gripper.on_press('o')  # Open right jaw
+                            #         gripper.on_press('i')  # Open left jaw
+                            #         time.sleep(2.0)  # Wait for gripper to complete action
+                            #     elif gripper_action == "close":
+                            #         print("Closing both jaws...")
+                            #         gripper.on_press('l')  # Close right jaw
+                            #         gripper.on_press('k')  # Close left jaw
+                            #         time.sleep(2.0)  # Wait for gripper to complete action
+
+                            #     # Optional: Verify if the robot has reached the position
+                            #     robot_state = env.get_robot_state()
+                            #     actual_pose = robot_state['ActualTCPPose']
+                            #     print(f"Robot reached position: {actual_pose}")
+                            #     print(f"Target position: {waypoint_6d}")
+
+                            #     # Ensure robot has reached close to the target (optional check)
+                            #     if not np.allclose(actual_pose[:3], waypoint_6d[:3], atol=0.01):
+                            #         print(f"Warning: Robot did not reach waypoint {i+1} exactly!")
+
+                            # # Update target_pose to the final waypoint to avoid resetting
+                            # target_pose = waypoints_with_gripper[-1][0].copy()
+                            # print("Hard-coded step complete.") 
+
+                            # # ---------------------------------------------------
+                            # # HARD-CODED PHASE (Step 2) after teleoperation
+                            # # ---------------------------------------------------                       
+
+
                         elif key_stroke == Key.backspace:
                             # Delete the most recent recorded episode
                             if click.confirm('Are you sure to drop an episode?'):

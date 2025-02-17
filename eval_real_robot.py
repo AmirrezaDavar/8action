@@ -291,8 +291,13 @@ def main(input, output, robot_ip, match_dataset, match_episode,
                     target_pose[:3] += dpos
                     target_pose[3:] = (drot * st.Rotation.from_rotvec(
                         target_pose[3:])).as_rotvec()
-                    # clip target pose
-                    target_pose[:3] = np.clip(target_pose[:3], [-0.50, -0.90, 0.07], [0.52, -0.42, 0.70])
+                    # clip target pose xfromR, y, z - 
+                    target_pose[:3] = np.clip(target_pose[:3], [-0.4, #x limits Right side
+                                                                -0.90, #y limits from the wall
+                                                                -0.05], #z from the buttom
+                                                                [0.1, #x limits Left side
+                                                                 -0.65, #y limits from PC
+                                                                 0.1]) #z from the top
 
 ################################################################################################################################################
 
@@ -407,9 +412,21 @@ def main(input, output, robot_ip, match_dataset, match_episode,
                             this_target_poses = this_target_poses[is_new]
                             action_timestamps = action_timestamps[is_new]
 
-                        # # clip actions
+                        # # # clip actions
+                        # this_target_poses[:,:3] = np.clip(
+                        #     this_target_poses[:,:3], [-0.50, -0.90, 0.07], [0.52, -0.42, 0.70])
+
+                        # clip actions
                         this_target_poses[:,:3] = np.clip(
-                            this_target_poses[:,:3], [-0.50, -0.90, 0.07], [0.52, -0.42, 0.70])
+                            this_target_poses[:,:3], [-0.4, -0.90, -0.05], [0.1, -0.65, 0.8])
+                        
+                        # # clip target pose xfromR, y, z - 
+                        # target_pose[:3] = np.clip(target_pose[:3], [-0.4, #x limits Right side
+                        #                                             -0.90, #y limits from the wall
+                        #                                             -0.05], #z from the buttom
+                        #                                             [0.1, #x limits Left side
+                        #                                              -0.65, #y limits from PC
+                        #                                              0.1]) #z from the top
 
 ###########################################################################################
 
@@ -493,6 +510,9 @@ def main(input, output, robot_ip, match_dataset, match_episode,
                     print("Interrupted!")
                     # stop robot.
                     env.end_episode()
+
+
+                # ========== hard coded control ==============
                 
                 print("Stopped.")
 
